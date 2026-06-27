@@ -51,7 +51,7 @@ CVS-specific extractor that starts from product headings such as:
 
 Then it climbs to the parent product card and extracts price, product URL, image URL, and source URL.
 
-### V3 — Multi-retailer championship version
+### V3/V4 — Multi-retailer championship version (And parallel workers in V4)
 
 File:
 
@@ -92,13 +92,16 @@ python3 scripts/v1_cvs_real_chrome_working.py
 python3 scripts/v2_cvs_h2_extractor.py
 ```
 
-## Run V3
+## Run V3/V4
 
 ```bash
 python3 scripts/v3_multi_retailer_championship.py
 ```
-
-For V3, you can choose:
+or
+```bash
+python3 scripts/v4_parallel_retailer_championship.py
+```
+For V3/V4, you can choose:
 
 ```text
 all
@@ -160,7 +163,7 @@ V2 output:
 ~/Desktop/cvs_output_v2
 ```
 
-V3 output:
+V3/V4 output:
 
 ```text
 ~/Desktop/retailer_championship_output
@@ -170,7 +173,7 @@ V3 output:
 
 Some retailers block automated browser sessions or limit repeated loading. The scripts do not bypass access controls. They record blocked/error status and continue where possible.
 
-For sensitive retailers, V3 uses low or zero "load more" clicks.
+For sensitive retailers, V3/V4 uses low or zero "load more" clicks.
 
 ## License
 
