@@ -23,6 +23,10 @@ DEFAULT_LOAD_MORE = 2
 DELAY_BETWEEN_RETAILERS = 3
 HEADLESS = False
 
+# Safe mode: the script pauses so a real human can complete verification.
+# It does not automate CAPTCHA, press-and-hold, or anti-bot challenges.
+MANUAL_CHALLENGE_MODE = True
+
 
 RETAILERS = [
     {
@@ -32,6 +36,7 @@ RETAILERS = [
         "search_url": "https://www.cvs.com/search?searchTerm={query_plus}",
         "max_load_more": 3,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Walgreens",
@@ -40,6 +45,7 @@ RETAILERS = [
         "search_url": "https://www.walgreens.com/search/results.jsp?Ntt={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "RiteAid",
@@ -48,14 +54,16 @@ RETAILERS = [
         "search_url": "https://www.riteaid.com/shop/catalogsearch/result/?q={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Walmart",
         "group": "bigbox",
         "base_url": "https://www.walmart.com",
         "search_url": "https://www.walmart.com/search?q={query_plus}",
-        "max_load_more": 1,
+        "max_load_more": 0,
         "parallel_ok": False,
+        "manual_challenge_ok": True,
     },
     {
         "name": "Target",
@@ -64,6 +72,7 @@ RETAILERS = [
         "search_url": "https://www.target.com/s?searchTerm={query_plus}",
         "max_load_more": 1,
         "parallel_ok": False,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Best Buy",
@@ -72,6 +81,7 @@ RETAILERS = [
         "search_url": "https://www.bestbuy.com/site/searchpage.jsp?st={query_plus}&intl=nosplash",
         "max_load_more": 1,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Macys",
@@ -80,6 +90,7 @@ RETAILERS = [
         "search_url": "https://www.macys.com/shop/featured/{query_dash}",
         "max_load_more": 0,
         "parallel_ok": False,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Kohls",
@@ -88,6 +99,7 @@ RETAILERS = [
         "search_url": "https://www.kohls.com/search.jsp?search={query_plus}",
         "max_load_more": 0,
         "parallel_ok": False,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Old Navy",
@@ -96,6 +108,7 @@ RETAILERS = [
         "search_url": "https://oldnavy.gap.com/browse/search.do?searchText={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Gap",
@@ -104,6 +117,7 @@ RETAILERS = [
         "search_url": "https://www.gap.com/browse/search.do?searchText={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Banana Republic",
@@ -112,6 +126,7 @@ RETAILERS = [
         "search_url": "https://bananarepublic.gap.com/browse/search.do?searchText={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "HM",
@@ -120,6 +135,7 @@ RETAILERS = [
         "search_url": "https://www2.hm.com/en_us/search-results.html?q={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Uniqlo",
@@ -128,6 +144,7 @@ RETAILERS = [
         "search_url": "https://www.uniqlo.com/us/en/search?q={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "JCPenney",
@@ -136,6 +153,7 @@ RETAILERS = [
         "search_url": "https://www.jcpenney.com/s?searchTerm={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Nordstrom",
@@ -144,6 +162,7 @@ RETAILERS = [
         "search_url": "https://www.nordstrom.com/sr?origin=keywordsearch&keyword={query_plus}",
         "max_load_more": 1,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Nordstrom Rack",
@@ -152,6 +171,7 @@ RETAILERS = [
         "search_url": "https://www.nordstromrack.com/sr?origin=keywordsearch&keyword={query_plus}",
         "max_load_more": 1,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "DSW",
@@ -160,6 +180,7 @@ RETAILERS = [
         "search_url": "https://www.dsw.com/browse?Ntt={query_plus}",
         "max_load_more": 2,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "Foot Locker",
@@ -168,6 +189,7 @@ RETAILERS = [
         "search_url": "https://www.footlocker.com/search?query={query_plus}",
         "max_load_more": 1,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
     {
         "name": "American Eagle",
@@ -176,6 +198,7 @@ RETAILERS = [
         "search_url": "https://www.ae.com/us/en/s/{query_plus}",
         "max_load_more": 1,
         "parallel_ok": True,
+        "manual_challenge_ok": False,
     },
 ]
 
@@ -282,7 +305,11 @@ def blocked_check(title: str, text: str, price_count: int) -> bool:
         "you don't have permission",
         "request blocked",
         "verify you are human",
+        "verify that you are human",
         "press and hold",
+        "press & hold",
+        "continue holding",
+        "robot or human",
         "captcha",
         "are you a robot",
         "unusual traffic",
@@ -290,6 +317,38 @@ def blocked_check(title: str, text: str, price_count: int) -> bool:
     ]
 
     return any(p in combined for p in patterns)
+
+
+def manual_challenge_pause(page, retailer_name: str) -> bool:
+    if not MANUAL_CHALLENGE_MODE:
+        return False
+
+    text = visible_text(page).lower()
+
+    challenge_terms = [
+        "press and hold",
+        "press & hold",
+        "continue holding",
+        "verify you are human",
+        "verify that you are human",
+        "robot or human",
+        "captcha",
+    ]
+
+    if not any(term in text for term in challenge_terms):
+        return False
+
+    print("")
+    print("=" * 90)
+    print(f"[WARN] {retailer_name}: human verification page detected.")
+    print("[ACTION] Complete the verification manually in the opened Chrome window.")
+    print("[ACTION] Do not close the browser.")
+    input("[ACTION] After the normal product/search page loads, press Enter here to continue...")
+    print("[INFO] Continuing after manual verification...")
+    print("=" * 90)
+
+    time.sleep(3)
+    return True
 
 
 def handle_best_buy_country_gate(page, search_url: str) -> None:
@@ -767,6 +826,24 @@ def save_csv(rows: list[dict[str, str]], output_file: Path) -> None:
             writer.writerow({key: row.get(key, "") for key in fieldnames})
 
 
+def blocked_row(retailer: dict, keyword: str, source_url: str, method: str) -> list[dict[str, str]]:
+    return [
+        {
+            "retailer": retailer["name"],
+            "group": retailer["group"],
+            "keyword": keyword,
+            "product_name": "",
+            "price": "",
+            "all_prices_found": "",
+            "product_url": "",
+            "image_url": "",
+            "source_url": source_url,
+            "status": "blocked_or_access_denied",
+            "method": method,
+        }
+    ]
+
+
 def scrape_retailer_with_context(context, retailer: dict, keyword: str) -> list[dict[str, str]]:
     name = retailer["name"]
     url = format_url(retailer, keyword)
@@ -795,6 +872,21 @@ def scrape_retailer_with_context(context, retailer: dict, keyword: str) -> list[
         if name.lower() == "best buy":
             handle_best_buy_country_gate(page, url)
 
+        if retailer.get("manual_challenge_ok", False):
+            manual_challenge_pause(page, name)
+
+        title_early = page.title()
+        text_early = visible_text(page)
+        prices_early = count_visible_prices(page)
+
+        if blocked_check(title_early, text_early, prices_early):
+            debug_html.write_text(page.content(), encoding="utf-8")
+            debug_text.write_text(text_early, encoding="utf-8")
+            page.screenshot(path=str(debug_png), full_page=True)
+
+            print(f"[WARN] {name}: blocked/access-control page detected.")
+            return blocked_row(retailer, keyword, page.url, "v4_blocked_page_detection")
+
         wait_for_products_or_prices(page, timeout_seconds=30)
 
         max_load_more = retailer.get("max_load_more", DEFAULT_LOAD_MORE)
@@ -818,21 +910,7 @@ def scrape_retailer_with_context(context, retailer: dict, keyword: str) -> list[
         print(f"[INFO] {name}: blocked={blocked}; visible_price_count={prices}")
 
         if blocked:
-            return [
-                {
-                    "retailer": name,
-                    "group": retailer["group"],
-                    "keyword": keyword,
-                    "product_name": "",
-                    "price": "",
-                    "all_prices_found": "",
-                    "product_url": "",
-                    "image_url": "",
-                    "source_url": page.url,
-                    "status": "blocked_or_access_denied",
-                    "method": "v4_visible_text_status",
-                }
-            ]
+            return blocked_row(retailer, keyword, page.url, "v4_visible_text_status")
 
         rows, debug_data = extract_products(page, keyword, retailer)
         debug_json.write_text(json.dumps(debug_data, indent=2), encoding="utf-8")
@@ -911,7 +989,8 @@ def show_retailers() -> None:
 
     for i, retailer in enumerate(RETAILERS, start=1):
         mode = "parallel" if retailer.get("parallel_ok", True) else "sequential"
-        print(f"{i:2d}. {retailer['name']} [{retailer['group']}, {mode}]")
+        manual = ", manual-check" if retailer.get("manual_challenge_ok", False) else ""
+        print(f"{i:2d}. {retailer['name']} [{retailer['group']}, {mode}{manual}]")
 
     print("")
     print("You can type:")
@@ -1072,7 +1151,7 @@ def run_sequential_pairs(
         return
 
     print("")
-    print(f"[INFO] Running {len(pairs)} sensitive retailers sequentially")
+    print(f"[INFO] Running {len(pairs)} sensitive/manual retailers sequentially")
 
     for retailer, keyword in pairs:
         rows = scrape_retailer_worker(retailer, keyword)
@@ -1120,8 +1199,9 @@ def run_once() -> None:
     print("[INFO] V4 parallel championship run starting")
     print(f"[INFO] Total retailer-keyword pairs: {len(pairs)}")
     print(f"[INFO] Parallel pairs: {len(parallel_pairs)}")
-    print(f"[INFO] Sequential pairs: {len(sequential_pairs)}")
+    print(f"[INFO] Sequential/manual pairs: {len(sequential_pairs)}")
     print(f"[INFO] MAX_WORKERS: {MAX_WORKERS}")
+    print(f"[INFO] Manual challenge mode: {MANUAL_CHALLENGE_MODE}")
     print(f"[INFO] Output CSV: {output_csv}")
 
     run_parallel_pairs(parallel_pairs, all_rows, output_csv)
