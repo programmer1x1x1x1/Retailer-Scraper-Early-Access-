@@ -58,6 +58,13 @@ RETAILERS = [
         "max_load_more": 2,
     },
     {
+        "name": "Best Buy",
+        "group": "electronics",
+        "base_url": "https://www.bestbuy.com",
+        "search_url": "https://www.bestbuy.com/site/searchpage.jsp?id=pcat17071&st={query_plus}",
+        "max_load_more": 1,
+    },
+    {
         "name": "Macys",
         "group": "clothing",
         "base_url": "https://www.macys.com",
@@ -183,10 +190,13 @@ def format_url(retailer: dict, keyword: str) -> str:
 def ask_retry() -> bool:
     while True:
         ans = input("Retry? y/n: ").strip().lower()
+
         if ans in {"y", "yes"}:
             return True
+
         if ans in {"n", "no"}:
             return False
+
         print("Please type y or n.")
 
 
@@ -201,13 +211,24 @@ def count_visible_prices(page) -> int:
                 function visible(el) {
                     const s = getComputedStyle(el);
                     const r = el.getBoundingClientRect();
-                    return s.display !== "none" && s.visibility !== "hidden" && r.width > 2 && r.height > 2;
+
+                    return (
+                        s.display !== "none" &&
+                        s.visibility !== "hidden" &&
+                        r.width > 2 &&
+                        r.height > 2
+                    );
                 }
 
                 for (const el of document.querySelectorAll("*")) {
                     if (!visible(el)) continue;
-                    const t = (el.innerText || el.textContent || "").replace(/\\s+/g, " ").trim();
+
+                    const t = (el.innerText || el.textContent || "")
+                        .replace(/\\s+/g, " ")
+                        .trim();
+
                     if (!t || t.length > 500) continue;
+
                     if (re.test(t)) count++;
                 }
 
@@ -227,10 +248,12 @@ def visible_text(page) -> str:
 
 
 def blocked_check(title: str, text: str, price_count: int) -> bool:
+    # Prices visible means the page is usable enough to parse.
     if price_count > 0:
         return False
 
     combined = f"{clean_text(title).lower()}\n{clean_text(text).lower()[:5000]}"
+
     patterns = [
         "access denied",
         "you don't have permission",
@@ -257,46 +280,75 @@ def wait_for_products_or_prices(page, timeout_seconds: int = 30) -> bool:
                     const priceRe = /\\$\\s?\\d+(?:,\\d{3})*(?:\\.\\d{2})?/;
 
                     function textOf(el) {
-                        return (el.innerText || el.textContent || "").replace(/\\s+/g, " ").trim();
+                        return (el.innerText || el.textContent || "")
+                            .replace(/\\s+/g, " ")
+                            .trim();
                     }
 
                     function visible(el) {
                         const s = getComputedStyle(el);
                         const r = el.getBoundingClientRect();
-                        return s.display !== "none" && s.visibility !== "hidden" && r.width > 2 && r.height > 2;
+
+                        return (
+                            s.display !== "none" &&
+                            s.visibility !== "hidden" &&
+                            r.width > 2 &&
+                            r.height > 2
+                        );
                     }
 
-                    const bad = ["sign in", "account", "cart", "menu", "customer service", "privacy policy"];
+                    const bad = [
+                        "sign in",
+                        "account",
+                        "cart",
+                        "menu",
+                        "customer service",
+                        "privacy policy",
+                        "terms of use"
+                    ];
 
-                    const headings = Array.from(document.querySelectorAll("h1,h2,h3,[role='heading'],a"))
-                        .filter(el => {
-                            if (!visible(el)) return false;
-                            const t = textOf(el);
-                            if (!t || t.length < 3 || t.length > 240) return false;
-                            if (/^\\$/.test(t)) return false;
-                            return !bad.some(x => t.toLowerCase().includes(x));
-                        });
+                    const headings = Array.from(
+                        document.querySelectorAll("h1,h2,h3,[role='heading'],a")
+                    ).filter(el => {
+                        if (!visible(el)) return false;
+
+                        const t = textOf(el);
+
+                        if (!t || t.length < 3 || t.length > 240) return false;
+                        if (/^\\$/.test(t)) return false;
+
+                        return !bad.some(x => t.toLowerCase().includes(x));
+                    });
 
                     let priceCount = 0;
 
                     for (const el of document.querySelectorAll("*")) {
                         if (!visible(el)) continue;
+
                         const t = textOf(el);
+
                         if (!t || t.length > 500) continue;
+
                         if (priceRe.test(t)) priceCount++;
                     }
 
-                    return { headingCount: headings.length, priceCount };
+                    return {
+                        headingCount: headings.length,
+                        priceCount
+                    };
                 }
                 """
             )
 
+            heading_count = result.get("headingCount", 0)
+            price_count = result.get("priceCount", 0)
+
             print(
-                f"[INFO] Product heading count: {result.get('headingCount', 0)}; "
-                f"visible price count: {result.get('priceCount', 0)}"
+                f"[INFO] Product heading count: {heading_count}; "
+                f"visible price count: {price_count}"
             )
 
-            if result.get("headingCount", 0) > 0 or result.get("priceCount", 0) > 0:
+            if heading_count > 0 or price_count > 0:
                 return True
 
         except Exception:
@@ -312,7 +364,10 @@ def click_load_more(page, max_clicks: int) -> None:
         print("[INFO] Load-more skipped for this retailer.")
         return
 
-    labels = re.compile(r"load more|show more|see more|more results|view more|show all", re.I)
+    labels = re.compile(
+        r"load more|show more|see more|more results|view more|show all",
+        re.I,
+    )
 
     for i in range(1, max_clicks + 1):
         page.mouse.wheel(0, 2500)
@@ -328,10 +383,12 @@ def click_load_more(page, max_clicks: int) -> None:
 
                 if not text or not labels.search(text):
                     continue
+
                 if not btn.is_visible(timeout=1000):
                     continue
 
                 before = count_visible_prices(page)
+
                 print(f"[INFO] Load more {i}: {text}")
 
                 btn.scroll_into_view_if_needed(timeout=5000)
@@ -340,6 +397,7 @@ def click_load_more(page, max_clicks: int) -> None:
                 time.sleep(4)
 
                 after = count_visible_prices(page)
+
                 print(f"[INFO] Price count before={before}, after={after}")
 
                 clicked = True
@@ -360,13 +418,21 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
             const priceRe = /\\$\\s?\\d+(?:,\\d{3})*(?:\\.\\d{2})?/g;
 
             function textOf(el) {
-                return (el.innerText || el.textContent || "").replace(/\\s+/g, " ").trim();
+                return (el.innerText || el.textContent || "")
+                    .replace(/\\s+/g, " ")
+                    .trim();
             }
 
             function visible(el) {
                 const s = getComputedStyle(el);
                 const r = el.getBoundingClientRect();
-                return s.display !== "none" && s.visibility !== "hidden" && r.width > 2 && r.height > 2;
+
+                return (
+                    s.display !== "none" &&
+                    s.visibility !== "hidden" &&
+                    r.width > 2 &&
+                    r.height > 2
+                );
             }
 
             function bestCard(el) {
@@ -376,12 +442,22 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                 for (let depth = 0; cur && depth < 14; depth++) {
                     const text = textOf(cur);
                     const prices = text.match(priceRe) || [];
-                    const links = cur.querySelectorAll ? cur.querySelectorAll("a[href]").length : 0;
-                    const imgs = cur.querySelectorAll ? cur.querySelectorAll("img").length : 0;
-                    const buttons = cur.querySelectorAll ? cur.querySelectorAll("button").length : 0;
+
+                    const links = cur.querySelectorAll
+                        ? cur.querySelectorAll("a[href]").length
+                        : 0;
+
+                    const imgs = cur.querySelectorAll
+                        ? cur.querySelectorAll("img").length
+                        : 0;
+
+                    const buttons = cur.querySelectorAll
+                        ? cur.querySelectorAll("button").length
+                        : 0;
 
                     if (text.length >= 20 && text.length <= 4500) {
                         let score = 0;
+
                         score += prices.length ? 60 : 0;
                         score += links ? 20 : 0;
                         score += imgs ? 10 : 0;
@@ -389,7 +465,12 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                         score += text.length < 1500 ? 10 : 0;
                         score -= depth;
 
-                        if (!best || score > best.score) best = { el: cur, score };
+                        if (!best || score > best.score) {
+                            best = {
+                                el: cur,
+                                score
+                            };
+                        }
                     }
 
                     cur = cur.parentElement;
@@ -402,7 +483,10 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                 let cur = el;
 
                 while (cur && cur !== card) {
-                    if (cur.tagName === "A" && cur.href) return cur.href;
+                    if (cur.tagName === "A" && cur.href) {
+                        return cur.href;
+                    }
+
                     cur = cur.parentElement;
                 }
 
@@ -417,8 +501,10 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                         href.includes("/p/") ||
                         href.includes("/ip/") ||
                         href.includes("/product") ||
+                        href.includes("/site/") ||
                         href.includes("prodid") ||
                         href.includes("skuId") ||
+                        href.includes("sku") ||
                         text.length > 4
                     ) {
                         return href;
@@ -430,7 +516,16 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
 
             function getImg(card) {
                 const img = card.querySelector("img");
-                return img ? (img.currentSrc || img.src || img.getAttribute("data-src") || "") : "";
+
+                if (!img) return "";
+
+                return (
+                    img.currentSrc ||
+                    img.src ||
+                    img.getAttribute("data-src") ||
+                    img.getAttribute("src") ||
+                    ""
+                );
             }
 
             const bad = [
@@ -441,17 +536,24 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                 "privacy policy",
                 "terms of use",
                 "customer service",
-                "track order"
+                "track order",
+                "skip to content",
+                "store locator",
+                "weekly ad"
             ];
 
-            const candidates = Array.from(document.querySelectorAll("h1,h2,h3,[role='heading'],a"))
-                .filter(el => {
-                    if (!visible(el)) return false;
-                    const name = textOf(el);
-                    if (!name || name.length < 3 || name.length > 240) return false;
-                    if (/^\\$/.test(name)) return false;
-                    return !bad.some(x => name.toLowerCase().includes(x));
-                });
+            const candidates = Array.from(
+                document.querySelectorAll("h1,h2,h3,[role='heading'],a")
+            ).filter(el => {
+                if (!visible(el)) return false;
+
+                const name = textOf(el);
+
+                if (!name || name.length < 3 || name.length > 240) return false;
+                if (/^\\$/.test(name)) return false;
+
+                return !bad.some(x => name.toLowerCase().includes(x));
+            });
 
             const products = [];
 
@@ -459,7 +561,14 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                 const name = textOf(el);
                 const card = bestCard(el);
                 const cardText = textOf(card);
-                const prices = [...new Set((cardText.match(priceRe) || []).map(p => p.replace(/\\s+/g, "")))];
+
+                const prices = [
+                    ...new Set(
+                        (cardText.match(priceRe) || []).map(p =>
+                            p.replace(/\\s+/g, "")
+                        )
+                    )
+                ];
 
                 if (!prices.length) continue;
 
@@ -501,8 +610,10 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
         image_url = urljoin(base_url, image_url) if image_url else ""
 
         key = (retailer_name.lower(), name.lower(), price, product_url)
+
         if key in seen:
             continue
+
         seen.add(key)
 
         rows.append(
@@ -512,7 +623,11 @@ def extract_products(page, keyword: str, retailer: dict) -> tuple[list[dict[str,
                 "keyword": keyword,
                 "product_name": name,
                 "price": price,
-                "all_prices_found": "; ".join(dict.fromkeys([normalize_price(p) for p in prices if normalize_price(p)])),
+                "all_prices_found": "; ".join(
+                    dict.fromkeys(
+                        [normalize_price(p) for p in prices if normalize_price(p)]
+                    )
+                ),
                 "product_url": product_url,
                 "image_url": image_url,
                 "source_url": data.get("url", ""),
@@ -544,6 +659,7 @@ def save_csv(rows: list[dict[str, str]], output_file: Path) -> None:
     with output_file.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
+
         for row in rows:
             writer.writerow({key: row.get(key, "") for key in fieldnames})
 
@@ -567,6 +683,7 @@ def scrape_retailer(context, retailer: dict, keyword: str) -> list[dict[str, str
     debug_html = OUTPUT_DIR / f"debug_{safe_retailer}_{safe_keyword}.html"
     debug_json = OUTPUT_DIR / f"debug_{safe_retailer}_{safe_keyword}.json"
     debug_png = OUTPUT_DIR / f"debug_{safe_retailer}_{safe_keyword}.png"
+    debug_text = OUTPUT_DIR / f"debug_{safe_retailer}_{safe_keyword}.txt"
 
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=45000)
@@ -587,9 +704,11 @@ def scrape_retailer(context, retailer: dict, keyword: str) -> list[dict[str, str
         prices = count_visible_prices(page)
 
         debug_html.write_text(html, encoding="utf-8")
+        debug_text.write_text(text, encoding="utf-8")
         page.screenshot(path=str(debug_png), full_page=True)
 
         blocked = blocked_check(title, text, prices)
+
         print(f"[INFO] {name}: blocked={blocked}; visible_price_count={prices}")
 
         if blocked:
@@ -633,6 +752,7 @@ def scrape_retailer(context, retailer: dict, keyword: str) -> list[dict[str, str
 
     except Exception as e:
         print(f"[ERROR] {name}: {e}")
+
         return [
             {
                 "retailer": name,
@@ -661,7 +781,13 @@ def show_retailers() -> None:
         print(f"{i:2d}. {retailer['name']} [{retailer['group']}]")
 
     print("")
-    print("You can type: all, clothing, pharmacy, bigbox, or numbers like 1,2,6,7")
+    print("You can type:")
+    print("  all")
+    print("  clothing")
+    print("  pharmacy")
+    print("  bigbox")
+    print("  electronics")
+    print("  or numbers like 1,2,6,7")
 
 
 def choose_retailers() -> list[dict]:
@@ -672,17 +798,19 @@ def choose_retailers() -> list[dict]:
     if not choice or choice == "all":
         return RETAILERS
 
-    if choice in {"clothing", "pharmacy", "bigbox"}:
+    if choice in {"clothing", "pharmacy", "bigbox", "electronics"}:
         return [r for r in RETAILERS if r["group"] == choice]
 
     selected = []
 
     for part in choice.split(","):
         part = part.strip()
+
         if not part.isdigit():
             continue
 
         idx = int(part)
+
         if 1 <= idx <= len(RETAILERS):
             selected.append(RETAILERS[idx - 1])
 
@@ -722,6 +850,7 @@ def get_keyword_map(selected: list[dict]) -> dict[str, str]:
 
     if mode == "1":
         keyword = input("Keyword for all retailers: ").strip()
+
         if not keyword:
             raise ValueError("Keyword cannot be empty.")
 
@@ -732,6 +861,7 @@ def get_keyword_map(selected: list[dict]) -> dict[str, str]:
 
     if mode == "3":
         path = input("CSV path: ").strip()
+
         if not path:
             raise ValueError("CSV path cannot be empty.")
 
@@ -742,6 +872,7 @@ def get_keyword_map(selected: list[dict]) -> dict[str, str]:
 
     for retailer in selected:
         keyword = input(f"{retailer['name']} keyword: ").strip()
+
         if keyword:
             keyword_map[retailer["name"]] = keyword
 
@@ -758,7 +889,12 @@ def run_once() -> None:
     selected = choose_retailers()
     keyword_map = get_keyword_map(selected)
 
-    pairs = [(r, keyword_map[r["name"]]) for r in selected if r["name"] in keyword_map]
+    pairs = [
+        (retailer, keyword_map[retailer["name"]])
+        for retailer in selected
+        if retailer["name"] in keyword_map
+    ]
+
     if not pairs:
         raise ValueError("No retailer-keyword pairs selected.")
 
@@ -785,7 +921,9 @@ def run_once() -> None:
                 rows = scrape_retailer(context, retailer, keyword)
                 all_rows.extend(rows)
 
+                # Save after each retailer so progress is not lost.
                 save_csv(all_rows, output_csv)
+
                 time.sleep(DELAY_BETWEEN_RETAILERS)
 
         finally:
@@ -800,13 +938,16 @@ def run_once() -> None:
     print("[DONE] Championship run finished")
     print(f"[DONE] Rows saved: {len(all_rows)}")
     print(f"[DONE] CSV saved: {output_csv}")
+
     print("")
     print(f"[DONE] Retailers with rows: {len(ok)}")
+
     for name in ok:
         print(f"  OK: {name}")
 
     print("")
     print(f"[DONE] Retailers with warnings/errors: {len(bad)}")
+
     for name in bad:
         print(f"  CHECK: {name}")
 
@@ -819,8 +960,10 @@ def main() -> None:
 
         except PlaywrightTimeoutError as e:
             print(f"[ERROR] Timeout: {e}")
+
             if ask_retry():
                 continue
+
             break
 
         except KeyboardInterrupt:
@@ -829,8 +972,10 @@ def main() -> None:
 
         except Exception as e:
             print(f"[ERROR] {e}")
+
             if ask_retry():
                 continue
+
             break
 
 
