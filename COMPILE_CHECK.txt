@@ -1,0 +1,4 @@
+v0_cvs_basic_bs4.py: ok
+v1_cvs_real_chrome_working.py: ok
+v2_cvs_h2_extractor.py: ok
+v3_multi_retailer_championship.py: ok
