@@ -171,7 +171,7 @@ V3/V4 output:
 
 ## Notes
 
-Some retailers block automated browser sessions or limit repeated loading. The scripts do not bypass access controls. They record blocked/error status and continue where possible.
+Some retailers block automated browser sessions or limit repeated loading. The scripts do not bypass access controls. They record blocked/error status and continue where possible. Walmart may require manual human verification. The V3/V4 script does not automate or bypass this challenge.
 
 For sensitive retailers, V3/V4 uses low or zero "load more" clicks.
 
